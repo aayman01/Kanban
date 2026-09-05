@@ -69,15 +69,15 @@ export function AuthForm({ mode }: Props) {
   }
 
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-center bg-background px-4">
-      <Link
-        href="/"
-        className="mb-8 flex items-center justify-center rounded-xl bg-card text-2xl font-bold px-2"
-      >
-        Kanban<span className="text-primary">App</span>
+    <div className="auth-grid flex min-h-dvh flex-col items-center justify-center px-4">
+      <Link href="/" className="mb-8 flex items-center gap-2.5">
+        <span className="flex size-6 items-center justify-center rounded-[5px] bg-white text-[11px] font-semibold text-black">
+          K
+        </span>
+        <span className="text-[15px] font-medium tracking-tight">Kanban</span>
       </Link>
-      <div className="w-full max-w-sm rounded-2xl bg-card p-6">
-        <h1 className="text-lg font-semibold">
+      <div className="w-full max-w-[380px] rounded-xl border border-border bg-card p-6 shadow-[0_0_0_1px_rgba(255,255,255,0.08)]">
+        <h1 className="text-lg font-semibold tracking-tight">
           {isLogin ? "Log in" : "Create an account"}
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">

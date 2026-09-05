@@ -27,7 +27,7 @@ export function Input({
         <input
           id={inputId}
           className={cn(
-            "h-10 w-full rounded-lg border border-border bg-input px-3 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-foreground/40",
+            "h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-ring",
             suffix && "pr-10",
             className,
           )}
@@ -58,7 +58,7 @@ export function Textarea({ label, id, className, ...props }: TextareaProps) {
       <textarea
         id={inputId}
         className={cn(
-          "min-h-24 w-full resize-y rounded-lg border border-border bg-input px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-foreground/40",
+          "min-h-24 w-full resize-y rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-ring",
           className,
         )}
         {...props}

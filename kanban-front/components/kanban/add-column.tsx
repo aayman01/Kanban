@@ -66,7 +66,7 @@ export function AddColumn({ onAdd }: Props) {
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="text-sm text-muted-foreground hover:text-foreground"
+          className="rounded-lg border border-dashed border-border px-3 py-2 text-left text-[13px] text-muted-foreground hover:border-white/20 hover:text-foreground"
         >
           + Add list
         </button>

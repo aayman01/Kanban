@@ -31,7 +31,7 @@ export function Drawer({ open, title, onClose, children }: Props) {
       <button
         type="button"
         aria-label="Close panel"
-        className="absolute inset-0 bg-black/50"
+        className="absolute inset-0 bg-black/70"
         onClick={onClose}
       />
       <aside
@@ -39,7 +39,7 @@ export function Drawer({ open, title, onClose, children }: Props) {
         aria-modal="true"
         aria-label={title}
         className={cn(
-          "absolute inset-y-3 right-3 flex w-[min(100vw,460px)] flex-col rounded-2xl bg-card transition-transform duration-200",
+          "absolute inset-y-3 right-3 flex w-[min(100vw,460px)] flex-col rounded-xl border border-border bg-card shadow-[0_0_0_1px_rgba(255,255,255,0.08)] transition-transform duration-200",
           open ? "translate-x-0" : "translate-x-full",
         )}
       >
@@ -49,7 +49,7 @@ export function Drawer({ open, title, onClose, children }: Props) {
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="flex size-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
+            className="flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-white/5 hover:text-foreground"
           >
             <X strokeWidth={1.5} className="size-4" />
           </button>

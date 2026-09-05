@@ -36,7 +36,7 @@ export function Modal({ open, title, onClose, children, className }: Props) {
       <button
         type="button"
         aria-label="Close dialog"
-        className="absolute inset-0 bg-black/60"
+        className="absolute inset-0 bg-black/70"
         onClick={onClose}
       />
       <div
@@ -44,7 +44,7 @@ export function Modal({ open, title, onClose, children, className }: Props) {
         aria-modal="true"
         aria-labelledby={titleId}
         className={cn(
-          "relative w-[min(92vw,440px)] rounded-2xl bg-card text-foreground",
+          "relative w-[min(92vw,440px)] rounded-xl border border-border bg-card text-foreground shadow-[0_0_0_1px_rgba(255,255,255,0.08)]",
           className,
         )}
       >
@@ -56,7 +56,7 @@ export function Modal({ open, title, onClose, children, className }: Props) {
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="flex size-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
+            className="flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-white/5 hover:text-foreground"
           >
             <X strokeWidth={1.5} className="size-4" />
           </button>

@@ -61,7 +61,7 @@ export function Dropdown({
         aria-label={label}
         onClick={() => setOpen((value) => !value)}
         className={cn(
-          "flex items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-card hover:text-foreground",
+          "flex items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-white/5 hover:text-foreground",
           trigger ? "min-h-8 px-2" : "size-8",
           className,
         )}
@@ -73,7 +73,7 @@ export function Dropdown({
           id={menuId}
           role="menu"
           className={cn(
-            "absolute top-full z-30 min-w-40 rounded-xl bg-card py-1",
+            "absolute top-full z-30 mt-1 min-w-40 rounded-xl border border-border bg-card py-1 shadow-[0_0_0_1px_rgba(255,255,255,0.08)]",
             align === "right" ? "right-0" : "left-0",
           )}
         >
@@ -83,7 +83,7 @@ export function Dropdown({
               type="button"
               role="menuitem"
               className={cn(
-                "flex min-h-9 w-full items-center px-3 text-left text-sm hover:bg-muted",
+                "flex min-h-9 w-full items-center px-3 text-left text-[13px] hover:bg-white/5",
                 item.destructive ? "text-[#E07A5F]" : "text-foreground",
               )}
               onClick={() => {

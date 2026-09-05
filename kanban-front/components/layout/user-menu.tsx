@@ -47,7 +47,7 @@ export function UserMenu() {
         aria-controls={menuId}
         aria-label="Account menu"
         onClick={() => setOpen((value) => !value)}
-        className="flex size-11 items-center justify-center rounded-full"
+        className="flex size-8 items-center justify-center rounded-full hover:bg-white/5"
       >
         <Avatar email={user.email} id={user.id} />
       </button>
@@ -55,7 +55,7 @@ export function UserMenu() {
         <div
           id={menuId}
           role="menu"
-          className="absolute top-full right-0 z-30 mt-1 w-56 rounded-lg border border-border bg-card py-2 shadow-xl"
+          className="absolute top-full right-0 z-30 mt-1 w-56 rounded-xl border border-border bg-card py-1 shadow-[0_0_0_1px_rgba(255,255,255,0.08)]"
         >
           <div className="border-b border-border px-3 pb-2">
             <p className="truncate text-sm font-medium">{name}</p>
@@ -64,7 +64,7 @@ export function UserMenu() {
           <button
             type="button"
             role="menuitem"
-            className="flex min-h-11 w-full items-center px-3 text-left text-sm hover:bg-muted"
+            className="flex min-h-9 w-full items-center px-3 text-left text-[13px] hover:bg-white/5"
             onClick={() => {
               setOpen(false);
               void logout().then(() => router.replace("/login"));

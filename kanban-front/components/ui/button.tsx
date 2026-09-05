@@ -4,10 +4,12 @@ import type { ButtonHTMLAttributes, ReactNode } from "react";
 type Variant = "primary" | "secondary" | "ghost" | "destructive";
 
 const variants: Record<Variant, string> = {
-  primary: "bg-foreground text-background hover:bg-white px-3",
-  secondary: "bg-card text-foreground hover:bg-[#252525] px-3",
-  ghost: "text-muted-foreground hover:bg-card hover:text-foreground px-3",
-  destructive: "text-[#E07A5F] hover:bg-card px-3",
+  primary: "bg-white text-black hover:bg-neutral-200 px-3",
+  secondary:
+    "border border-border bg-transparent text-foreground hover:bg-white/5 px-3",
+  ghost: "text-muted-foreground hover:bg-white/5 hover:text-foreground px-3",
+  destructive:
+    "border border-border text-[#E07A5F] hover:bg-white/5 px-3",
 };
 
 type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
@@ -26,7 +28,7 @@ export function Button({
     <button
       type={type}
       className={cn(
-        "inline-flex min-h-9 items-center justify-center gap-2 rounded-lg text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40",
+        "inline-flex h-8 min-h-8 cursor-pointer items-center justify-center gap-2 rounded-md text-[13px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40",
         variants[variant],
         className,
       )}

@@ -125,7 +125,7 @@ export function KanbanColumn({
             <button
               type="button"
               onClick={() => setAdding(true)}
-              className="w-full rounded-xl bg-card px-4 py-3 text-left text-sm text-muted-foreground hover:bg-[#232323] hover:text-foreground"
+              className="w-full rounded-lg border border-dashed border-border bg-transparent px-3 py-2.5 text-left text-[13px] text-muted-foreground hover:border-white/20 hover:bg-white/[0.03] hover:text-foreground"
             >
               + Add a card
             </button>

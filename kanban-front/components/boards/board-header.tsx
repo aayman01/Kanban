@@ -42,24 +42,24 @@ export function BoardHeader({ boardId, onShare }: Props) {
   }
 
   return (
-    <header className="flex min-h-16 shrink-0 items-center justify-between gap-3 border-b border-border px-6 py-6 md:px-10">
-      <div className="flex min-w-0 flex-col gap-1">
-        <div className="flex min-w-0 items-center gap-3">
+    <header className="flex min-h-14 shrink-0 items-center justify-between gap-3 border-b border-border px-6 py-2 md:px-10">
+      <div className="flex min-w-0 flex-col gap-0.5">
+        <div className="flex min-w-0 items-center gap-2">
           <Link
             href="/"
-            className="shrink-0 text-sm font-medium text-muted-foreground hover:text-foreground"
+            className="shrink-0 text-[13px] font-medium text-muted-foreground hover:text-foreground"
           >
             Boards
           </Link>
-          <span className="text-muted-foreground" aria-hidden="true">
+          <span className="text-[13px] text-muted-foreground" aria-hidden="true">
             /
           </span>
-          <h1 className="truncate text-xl font-semibold md:text-2xl">
+          <h1 className="truncate text-[13px] font-medium md:text-sm">
             {board.name}
           </h1>
           {role ? (
             <span
-              className="shrink-0 rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground"
+              className="shrink-0 rounded-full border border-border px-2 py-0.5 text-[11px] text-muted-foreground"
               aria-label={`Your access: ${formatRole(role)}`}
             >
               {formatRole(role)}
@@ -84,7 +84,7 @@ export function BoardHeader({ boardId, onShare }: Props) {
             />
           ))}
         </div>
-        <Button variant="secondary" onClick={onShare} className="h-8 min-h-8 px-3">
+        <Button variant="secondary" onClick={onShare}>
           Share
         </Button>
         {canManage ? (

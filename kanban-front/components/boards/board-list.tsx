@@ -41,15 +41,15 @@ export function BoardList() {
   return (
     <div className="h-full overflow-y-auto">
       <div className="mx-auto w-full max-w-5xl px-5 py-8 md:px-10 md:py-10">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h1 className="text-2xl font-semibold md:text-3xl">Boards</h1>
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">Boards</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Create and open boards you have access to.
+            </p>
+          </div>
           <div className="ml-auto flex items-center gap-2">
-            <Button
-              onClick={() => setCreateOpen(true)}
-              className="bg-white px-4 text-black hover:bg-white/90"
-            >
-              Add board
-            </Button>
+            <Button onClick={() => setCreateOpen(true)}>Add board</Button>
             <UserMenu />
           </div>
         </div>
@@ -87,7 +87,7 @@ export function BoardList() {
                 <li key={board.id}>
                   <Link
                     href={`/boards/${board.id}`}
-                    className="flex h-full flex-col rounded-xl border border-border bg-card p-4 hover:bg-muted"
+                    className="flex h-full flex-col rounded-lg border border-border bg-card p-4 hover:border-white/20 hover:bg-white/[0.03]"
                   >
                     <span className="truncate font-medium">{board.name}</span>
                     <p className="mt-2 text-xs text-muted-foreground">

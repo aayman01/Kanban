@@ -36,12 +36,12 @@ export function TaskCard({
       ref={innerRef}
       style={style}
       className={cn(
-        "group relative rounded-xl border border-transparent bg-card p-4",
-        overlay && "bg-[#252525]",
+        "group relative rounded-lg border border-border bg-card p-3",
+        overlay && "bg-muted",
         dragging && "opacity-40",
         !overlay &&
         !dragging &&
-        "hover:border-foreground hover:bg-[#232323] focus-within:border-foreground",
+        "hover:border-white/20 hover:bg-white/[0.03] focus-within:border-white/20",
       )}
     >
       {canEdit && !overlay ? (
@@ -68,9 +68,9 @@ export function TaskCard({
       ) : null}
       <button type="button" onClick={onOpen} className="w-full text-left">
         {/* <p className="text-xs text-muted-foreground">{formatAdded(task.createdAt)}</p> */}
-        <h3 className="mt-2 text-[15px] leading-snug font-semibold">{task.title}</h3>
+        <h3 className="text-[13px] leading-snug font-medium">{task.title}</h3>
         {task.description ? (
-          <p className="mt-2 line-clamp-2 text-sm leading-6 text-muted-foreground">
+          <p className="mt-1.5 line-clamp-2 text-[13px] leading-5 text-muted-foreground">
             {task.description}
           </p>
         ) : null}

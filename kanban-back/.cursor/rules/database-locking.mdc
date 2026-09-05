@@ -1,0 +1,90 @@
+---
+description: Database locking conventions for race-safe Prisma transactions
+alwaysApply: true
+---
+
+# Database locking (Kanban Board API)
+
+Follow these rules when a service reads then writes, enforces "one per logical key" (e.g. one owner, one membership row per user/board), or recalculates task/column positions.
+
+## Stack
+
+- **ORM:** Prisma (`$transaction`, default READ COMMITTED)
+- **Helpers:** `src/common/db/` — `advisoryXactLock`, row-lock helpers, `rebalanceColumnInTx`
+
+## When to use **pessimistic row locks** (`SELECT ... FOR UPDATE`)
+
+- Read one or more rows and update/delete them in the **same transaction**
+- Resource is a specific row: task delete, column delete, board member removal, single task position update where you've already resolved `prevTaskId`/`nextTaskId`
+
+**How:** Call helpers in `src/common/db/row-lock.ts` at the start of the transaction, then read/write using the same `tx`.
+
+## When to use **advisory locks** (`pg_advisory_xact_lock`)
+
+Task moves are the main case here. Two users dragging tasks into the same column at the same moment can both read the same `prev`/`next` neighbors and compute the _same_ midpoint — resulting in duplicate `position` values. Serialize per-column, not per-row, since the "logical key" being contended is the column's ordering, not a single task.
+
+- Serialize task-move position calculation within a column
+- Serialize column position calculation within a board (column reorder)
+- Guard column/task rebalancing so it can't run concurrently with a move in the same column
+- Enforce "one `BoardMember` row per user/board" on invite (belt-and-suspenders alongside the `@@unique([boardId, userId])` constraint)
+
+**How:**
+
+```typescript
+await advisoryXactLock(tx, `column:${columnId}:position`);
+```
+
+Use stable namespaced keys: `column:${columnId}:position`, `board:${boardId}:column-position`, `board:${boardId}:member-invite`.
+
+## Task move pattern (fractional positioning)
+
+```typescript
+async moveTask(taskId: string, targetColumnId: string, prevTaskId?: string, nextTaskId?: string) {
+  return this.prisma.$transaction(async (tx) => {
+    // Lock the target column first — prevents concurrent moves from
+    // computing the same midpoint against stale neighbor reads
+    await advisoryXactLock(tx, `column:${targetColumnId}:position`);
+
+    const task = await tx.task.findUniqueOrThrow({ where: { id: taskId } });
+    const prev = prevTaskId ? await tx.task.findUnique({ where: { id: prevTaskId } }) : null;
+    const next = nextTaskId ? await tx.task.findUnique({ where: { id: nextTaskId } }) : null;
+
+    let newPosition: number;
+    if (prev && next) {
+      newPosition = (prev.position + next.position) / 2;
+      // Gap exhausted — rebalance before writing, still inside the lock
+      if (next.position - prev.position < 1e-7) {
+        await rebalanceColumnInTx(tx, targetColumnId);
+        return this.moveTask(taskId, targetColumnId, prevTaskId, nextTaskId); // retry with clean spacing
+      }
+    } else if (prev && !next) {
+      newPosition = prev.position + 1;
+    } else if (!prev && next) {
+      newPosition = next.position / 2;
+    } else {
+      newPosition = 1.0;
+    }
+
+    return tx.task.update({
+      where: { id: taskId },
+      data: { position: newPosition, columnId: targetColumnId },
+    });
+  });
+}
+```
+
+## Multi-step writes checklist
+
+- [ ] All related reads/writes in one `$transaction`
+- [ ] Advisory lock on the **column**, not the task, before computing a new position
+- [ ] Row lock before contested delete (task/column/board-member)
+- [ ] `@@unique([boardId, userId])` on `BoardMember` as final safety net for invites
+- [ ] Throw `ConflictException` / `NotFoundException` — filter maps Prisma errors to 409/404
+- [ ] Access-control check (board membership) happens **before** acquiring any lock, not after
+
+## Do not
+
+- Compute a move's new position outside a transaction — two concurrent drags will collide
+- Rely on `$transaction` alone for "one membership per user/board" without the `@@unique` constraint
+- Lock per-task when the contention is really per-column — you'll serialize unrelated moves unnecessarily
+- Swallow `P2002` — global filter maps it to 409

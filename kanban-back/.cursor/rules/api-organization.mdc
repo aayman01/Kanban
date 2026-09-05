@@ -1,0 +1,190 @@
+---
+description: API under src/api/{public,user}; repository pattern in src/repositories/; dto/; @BoardAuth
+globs: src/api/**/*.ts,src/repositories/**/*.ts,src/**/*controller*.ts,src/**/*module*.ts
+alwaysApply: true
+---
+
+# API organization (Kanban Board API)
+
+## Route layout
+
+- `src/api/public/` → `/public/...` — register, login, health check (no auth required)
+- `src/api/user/` → `/user/...` — boards, columns, tasks, board-member invites (authenticated user routes)
+
+Session/auth helpers live under `src/api/public/auth/` — `POST /public/auth/register`, `POST /public/auth/login`, `POST /public/auth/refresh`. These stay public; do not gate them behind `@BoardAuth()`.
+
+Global Nest prefix is `api/v1`, so full paths are `/api/v1/public/...`, `/api/v1/user/...`.
+
+## Request flow (strict — no skipping layers)
+
+Every API request follows this chain. Each layer only talks to the one directly below it:
+
+```
+Controller (src/api/…)  →  Service  →  Repository  →  Prisma table
+```
+
+| Step | Layer | Location | Calls | Never calls |
+|------|-------|----------|-------|-------------|
+| 1 | **Controller** | `src/api/<area>/<feature>/` | Feature service | Repository, Prisma |
+| 2 | **Service** | `src/api/<area>/<feature>/` | Repository service(s) | Prisma / `PrismaService` for entity CRUD |
+| 3 | **Repository** | `src/repositories/<entity>-repository/` | `PrismaService` → model delegate (`user`, `board`, …) | Controllers, feature services |
+| 4 | **Prisma table** | PostgreSQL via `@prisma/client` | — | — |
+
+```typescript
+// Controller — HTTP only, delegates to service
+@Post()
+create(@Body({ schema: createBoardSchema }) body: CreateBoardDto) {
+  return this.boardService.create(body);
+}
+
+// Service — business logic, auth checks, transactions; delegates to repository
+async create(dto: CreateBoardDto) {
+  return this.boardRepository.create({ name: dto.name });
+}
+
+// Repository — single-entity Prisma access only
+create(data: Prisma.BoardCreateInput, tx?: Prisma.TransactionClient) {
+  const client = tx ?? this.prisma;
+  return client.board.create({ data });
+}
+```
+
+Do not put business logic in controllers. Do not put HTTP concerns in repositories. Do not query Prisma tables from feature services.
+
+## Access control
+
+- `@BoardAuth()` — class or method-level guard, checks the requesting user has a `BoardMember` row for the `:boardId` in the route param before allowing the request through. Applies to every controller under `board/`, `column/`, `task/`.
+- Guard lives in `src/api/user/auth/guards/board-auth.guard.ts`
+- Import `BoardAuthModule` in any feature module whose controller uses `@BoardAuth()`
+- Role checks (`OWNER` / `EDITOR` / `VIEWER`) happen inside the guard or a follow-up `@Roles(...)` decorator — never inline in the controller/service
+
+## Repository pattern (required for all DB access)
+
+All database reads and writes go through `src/repositories/`. **Never** call `PrismaService` (or `prisma.*`) directly from API controllers or feature services.
+
+### Folder layout
+
+One folder per Prisma model / aggregate, kebab-case with a `-repository` suffix:
+
+```
+src/repositories/
+  user-repository/
+    user-repository.module.ts
+    user-repository.service.ts
+  board-repository/
+    board-repository.module.ts
+    board-repository.service.ts
+  board-member-repository/
+    board-member-repository.module.ts
+    board-member-repository.service.ts
+  column-repository/
+    column-repository.module.ts
+    column-repository.service.ts
+  task-repository/
+    task-repository.module.ts
+    task-repository.service.ts
+```
+
+Each repository folder exports exactly two files — a Nest module and a service. No controllers, DTOs, or guards inside `repositories/`.
+
+### Naming
+
+| Item | Pattern | Example |
+|------|---------|---------|
+| Folder | `<entity>-repository/` | `board-member-repository/` |
+| Module file | `<entity>-repository.module.ts` | `board-repository.module.ts` |
+| Service file | `<entity>-repository.service.ts` | `board-repository.service.ts` |
+| Module class | `<Entity>RepositoryModule` | `BoardRepositoryModule` |
+| Service class | `<Entity>RepositoryService` | `BoardRepositoryService` |
+
+### Service implementation
+
+- Inject `PrismaService` in the constructor — **not** `PrismaClient` directly.
+- One repository service owns all Prisma access for that entity (find, create, update, delete, scoped lists).
+- Methods return Prisma model types or `null`; no HTTP exceptions inside repositories.
+- Accept an optional `tx` (`Prisma.TransactionClient`) on methods that may run inside a transaction:
+
+```typescript
+@Injectable()
+export class UserRepositoryService {
+  constructor(private readonly prisma: PrismaService) {}
+
+  findByEmail(email: string, tx?: Prisma.TransactionClient) {
+    const client = tx ?? this.prisma;
+    return client.user.findUnique({ where: { email } });
+  }
+
+  findById(id: string, tx?: Prisma.TransactionClient) {
+    const client = tx ?? this.prisma;
+    return client.user.findUnique({ where: { id } });
+  }
+
+  create(data: Prisma.UserCreateInput, tx?: Prisma.TransactionClient) {
+    const client = tx ?? this.prisma;
+    return client.user.create({ data });
+  }
+}
+```
+
+### Module wiring
+
+- Each `*-repository.module.ts` imports `PrismaModule` and exports its repository service.
+- Feature modules (`src/api/...`) import the repository module(s) they need — never `PrismaModule` directly unless the feature service orchestrates a transaction via `PrismaService.transaction()`.
+
+```typescript
+@Module({
+  imports: [PrismaModule],
+  providers: [BoardRepositoryService],
+  exports: [BoardRepositoryService],
+})
+export class BoardRepositoryModule {}
+```
+
+### Layer responsibilities
+
+| Layer | Location | Responsibility |
+|-------|----------|----------------|
+| Controller | `src/api/<area>/<feature>/` | Routes, DTO binding, guards — **no DB** |
+| Service | `src/api/<area>/<feature>/` | Business rules, orchestration, `$transaction` — **no direct Prisma** |
+| Repository | `src/repositories/<entity>-repository/` | CRUD and queries for one entity — **Prisma only** |
+| Prisma table | `users`, `boards`, `board_members`, … | Persistence |
+
+- Feature services orchestrate multi-entity flows and pass `tx` into repository calls inside `$transaction`.
+- Locking helpers (`advisoryXactLock`, row locks) live in `src/common/db/` — see [database-locking](database-locking.mdc).
+- `PrismaService` (`src/prisma/`) is infrastructure: connection, `$transaction`, health check — not a substitute for repositories.
+
+## Feature layout (API)
+
+```
+src/api/user/board/
+  board.controller.ts
+  board.service.ts
+  board.module.ts
+  dto/
+    create-board.dto.ts
+    update-board.dto.ts
+    board-response.dto.ts
+```
+
+- Put Zod schemas in `dto/` — no loose `*.schemas.ts` beside controllers.
+- Wire features via area modules (`PublicApiModule`, `UserApiModule`) into `AppModule`.
+
+## Rules
+
+1. Controllers and feature services **never** import `@prisma/client` or call `PrismaService` for entity CRUD — use repository services.
+2. One repository folder per entity; do not combine unrelated models in one repository service.
+3. Place controllers/services/modules/DTOs under the matching `src/api/<area>/` folder.
+4. Controller prefixes must match the folder (`public`, `user`).
+5. Authenticated board routes use `@BoardAuth()`; modules import `BoardAuthModule`.
+6. **Race-safe writes** — multi-step flows use `$transaction` + locks — see [database-locking](database-locking.mdc).
+
+## Checklist for new endpoints
+
+- [ ] Chose `public` or `user` correctly
+- [ ] Files under `src/api/<area>/...` with `dto/` for inputs/docs
+- [ ] New entity DB access added in `src/repositories/<entity>-repository/`, not in the feature service
+- [ ] Repository module imported in the feature module
+- [ ] Auth: public routes vs `@BoardAuth()` (class or method) as appropriate
+- [ ] `@Controller('<area>/...')` matches the folder
+- [ ] Module wired into the area module / `AppModule`
+- [ ] Contested writes use tx + correct lock (advisory vs row lock)
